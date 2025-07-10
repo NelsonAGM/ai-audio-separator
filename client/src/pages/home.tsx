@@ -118,6 +118,36 @@ export default function Home() {
     },
   });
 
+  // Reset mutation
+  const resetMutation = useMutation({
+    mutationFn: async (audioId: number) => {
+      const response = await fetch(`/api/reset/${audioId}`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Reset failed');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      setCurrentSection('upload');
+      refetch();
+      toast({
+        title: "Reset successful",
+        description: "You can now start the separation process again.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Reset failed",
+        description: "There was an error resetting the audio file.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Handle file selection
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
@@ -157,6 +187,12 @@ export default function Home() {
     setSelectedFile(null);
     setAudioFileId(null);
     setCurrentSection('upload');
+  };
+
+  // Handle reset processing
+  const handleResetProcessing = async () => {
+    if (!audioFileId) return;
+    await resetMutation.mutateAsync(audioFileId);
   };
 
   // Update section based on status
@@ -379,6 +415,31 @@ export default function Home() {
                 </div>
 
                 <ProgressSteps currentStep={audioFile?.status || 'processing'} />
+                
+                {/* Reset button for stuck processing */}
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <Button
+                    onClick={handleResetProcessing}
+                    disabled={resetMutation.isPending}
+                    variant="outline"
+                    className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+                  >
+                    {resetMutation.isPending ? (
+                      <>
+                        <Cog className="w-4 h-4 mr-2 animate-spin" />
+                        Resetting...
+                      </>
+                    ) : (
+                      <>
+                        <HelpCircle className="w-4 h-4 mr-2" />
+                        Reset & Try Again
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-sm text-gray-500 mt-2">
+                    If processing is stuck, click to reset and try again
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>

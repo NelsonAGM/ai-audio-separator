@@ -62,6 +62,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reset audio file status
+  app.post("/api/reset/:id", async (req, res) => {
+    try {
+      const audioFileId = parseInt(req.params.id);
+      const audioFile = await storage.getAudioFile(audioFileId);
+
+      if (!audioFile) {
+        return res.status(404).json({ message: "Audio file not found" });
+      }
+
+      // Reset status and clear any existing tracks
+      await storage.updateAudioFileStatus(audioFileId, "uploaded");
+      await storage.deleteSeparatedTracksByAudioFileId(audioFileId);
+
+      res.json({ message: "Audio file reset successfully", audioFileId });
+    } catch (error) {
+      console.error("Reset error:", error);
+      res.status(500).json({ message: "Failed to reset audio file" });
+    }
+  });
+
   // Start audio separation process
   app.post("/api/separate/:id", async (req, res) => {
     try {
@@ -91,13 +112,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           // Run Spleeter separation
-          const pythonProcess = spawn("python3", [
+          const pythonProcess = spawn("python", [
             path.join(process.cwd(), "server/services/audio-processor.py"),
             inputPath,
             outputPath,
-          ]);
+          ], {
+            stdio: ['pipe', 'pipe', 'pipe'],
+            env: { ...process.env, PYTHONPATH: process.cwd() }
+          });
+
+          // Set timeout for long-running processes (10 minutes)
+          const timeoutId = setTimeout(() => {
+            console.error("Process timeout reached, killing Python process");
+            pythonProcess.kill('SIGTERM');
+          }, 10 * 60 * 1000); // 10 minutes
+
+          // Log Python process output
+          pythonProcess.stdout?.on('data', (data) => {
+            console.log(`Python stdout: ${data}`);
+          });
+
+          pythonProcess.stderr?.on('data', (data) => {
+            console.error(`Python stderr: ${data}`);
+          });
 
           pythonProcess.on("close", async (code) => {
+            clearTimeout(timeoutId);
+            console.log(`Python process exited with code ${code}`);
             if (code === 0) {
               // Process completed successfully, create track records
               const trackTypes = ["vocals", "drums", "bass", "other"];
@@ -113,10 +154,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     fileName: trackFileName,
                     filePath: trackFilePath,
                   });
+                  console.log(`Created track record for ${trackType}`);
                 }
               }
 
               await storage.updateAudioFileStatus(audioFileId, "completed");
+              console.log(`Audio file ${audioFileId} processing completed`);
             } else {
               console.error(`Spleeter process failed with code ${code}`);
               await storage.updateAudioFileStatus(audioFileId, "error");
@@ -124,6 +167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
 
           pythonProcess.on("error", async (error) => {
+            clearTimeout(timeoutId);
             console.error("Spleeter process error:", error);
             await storage.updateAudioFileStatus(audioFileId, "error");
           });

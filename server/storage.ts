@@ -73,7 +73,11 @@ export class MemStorage implements IStorage {
 
   async createSeparatedTrack(insertTrack: InsertSeparatedTrack): Promise<SeparatedTrack> {
     const id = this.currentTrackId++;
-    const track: SeparatedTrack = { ...insertTrack, id };
+    const track: SeparatedTrack = { 
+      ...insertTrack, 
+      id,
+      audioFileId: insertTrack.audioFileId || 0
+    };
     this.separatedTracks.set(id, track);
     return track;
   }

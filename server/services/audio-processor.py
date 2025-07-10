@@ -2,6 +2,7 @@
 import sys
 import os
 import logging
+import numpy as np
 from spleeter.separator import Separator
 import librosa
 import soundfile as sf
@@ -15,22 +16,34 @@ def separate_audio(input_path, output_dir):
     Separate audio using Spleeter into 4 stems: vocals, drums, bass, other
     """
     try:
-        # Initialize Spleeter with 4stems model (vocals, drums, bass, other)
-        separator = Separator('spleeter:4stems-wq-16kHz')
-        
         logger.info(f"Loading audio file: {input_path}")
         
-        # Load audio file
-        waveform, sample_rate = librosa.load(input_path, sr=16000, mono=False)
+        # Load audio file with optimized settings for long files
+        waveform, sample_rate = librosa.load(input_path, sr=22050, mono=False)
+        logger.info(f"Sample rate: {sample_rate}")
         
-        # Ensure stereo
+        # Limit audio length to 5 minutes for processing (300 seconds)
+        max_length = 300 * sample_rate
+        if waveform.shape[-1] > max_length:
+            logger.info(f"Trimming audio from {waveform.shape[-1]/sample_rate:.1f}s to {max_length/sample_rate:.1f}s")
+            waveform = waveform[..., :max_length]
+        
+        # Convert to stereo if needed
         if len(waveform.shape) == 1:
-            waveform = waveform.reshape(1, -1)
-        if waveform.shape[0] == 1:
+            # Mono to stereo
+            waveform = np.stack([waveform, waveform])
+        elif waveform.shape[0] == 1:
+            # Single channel to stereo
             waveform = np.repeat(waveform, 2, axis=0)
         
-        # Spleeter expects (samples, channels) format
+        # Transpose to (samples, channels) format for Spleeter
         waveform = waveform.T
+        
+        logger.info(f"Waveform shape: {waveform.shape}")
+        logger.info("Initializing Spleeter separator...")
+        
+        # Initialize Spleeter with 4stems model - use faster model for quicker processing
+        separator = Separator('spleeter:4stems-wq-16kHz')
         
         logger.info("Starting separation...")
         
@@ -47,7 +60,7 @@ def separate_audio(input_path, output_dir):
                 track_data = prediction[track_name]
                 output_path = os.path.join(output_dir, f"{track_name}.wav")
                 
-                # Save as WAV file
+                # Save as WAV file with original sample rate
                 sf.write(output_path, track_data, sample_rate)
                 logger.info(f"Saved {track_name} track to {output_path}")
         
@@ -56,6 +69,8 @@ def separate_audio(input_path, output_dir):
         
     except Exception as e:
         logger.error(f"Error during separation: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return False
 
 def main():
