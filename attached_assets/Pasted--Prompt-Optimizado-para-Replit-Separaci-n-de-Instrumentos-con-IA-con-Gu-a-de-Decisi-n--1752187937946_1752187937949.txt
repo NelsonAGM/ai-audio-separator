@@ -1,0 +1,41 @@
+-----
+
+## Prompt Optimizado para Replit: Separación de Instrumentos con IA (con Guía de Decisión)
+
+```
+Quiero desarrollar una aplicación web en Replit que permita a los usuarios subir un archivo de audio (MP3, WAV) y, mediante inteligencia artificial, separar las pistas de instrumentos individuales (por ejemplo, voz, batería, bajo, guitarra, piano).
+
+La aplicación debe tener las siguientes características:
+
+1.  **Interfaz de Usuario (Frontend):**
+    * Sencilla y fácil de usar, construida con **HTML, CSS y JavaScript (Vanilla JS o un framework ligero como React/Vue si es viable en Replit)**.
+    * Un botón para subir archivos de audio.
+    * Un indicador de progreso mientras se procesa el audio.
+    * Un área donde se muestren las pistas separadas y se puedan reproducir individualmente o descargar.
+
+2.  **Lógica del Servidor (Backend):**
+    * Utilizar **Python con Flask o FastAPI** para manejar las solicitudes HTTP y el procesamiento del audio.
+    * Integración de una **biblioteca de separación de fuentes de audio basada en IA**. Para tomar la mejor decisión en Replit, considera lo siguiente:
+        * **Opción A (Recomendada para Calidad/Potencia, pero con Riesgo de Recursos): Demucs (Facebook AI Research)**. Es la más potente y ofrece la mejor calidad de separación. Sin embargo, puede ser muy intensiva en RAM y CPU, lo que podría limitar el tamaño de las canciones o el número de usuarios concurrentes en Replit. Si eliges Demucs, prioriza los modelos más ligeros como `mdx_extra_q` o `mdx_extra`.
+        * **Opción B (Buen Balance entre Calidad y Recursos): Spleeter (Deezer Research)**. Es una excelente alternativa, más optimizada en recursos que Demucs para muchos casos, y también ofrece muy buena calidad. Podría ser un punto de partida más estable en Replit.
+        * **Opción C (Menos Calidad/Más Control, pero Muy Ligera): Librosa con enfoques de procesamiento de señal o modelos pre-entrenados muy pequeños.** Esta opción sería para casos donde Demucs y Spleeter son demasiado pesados. La calidad de separación sería inferior, pero el uso de recursos sería mínimo. No es una separación de IA tan "pura" como las anteriores.
+
+    * Capacidad para guardar los archivos separados temporalmente en el servidor.
+
+3.  **Flujo de Trabajo:**
+    * El usuario sube un archivo de audio.
+    * El servidor recibe el archivo, lo procesa con la IA para separar los instrumentos.
+    * Las pistas separadas se envían de vuelta al frontend para que el usuario las reproduzca o descargue.
+
+**Consideraciones clave para la implementación en Replit:**
+
+* **Limitaciones de recursos:** Replit tiene limitaciones de RAM y CPU. Tu elección de librería de IA debe balancear la calidad de separación con el consumo de recursos. **Empieza probando Spleeter (Opción B) o una versión ligera de Demucs (Opción A) y ajusta si es necesario.**
+* **Tiempo de procesamiento:** La separación de audio es intensiva. Implementa indicadores de progreso y notifica al usuario sobre el tiempo de espera.
+* **Almacenamiento temporal:** Gestiona la eliminación de archivos temporales para evitar agotar el espacio de Replit.
+* **Variables de entorno:** Utiliza las variables de entorno de Replit para cualquier clave API o configuración sensible.
+* **Dependencias:** Lista claramente todas las dependencias necesarias en `requirements.txt`.
+
+**Objetivo:** Crear una prueba de concepto funcional que demuestre la capacidad de separar voz, batería, bajo y un canal de "otros" instrumentos.
+
+**¿Qué opción de librería de separación de audio (A, B o C) consideras la más adecuada para tu primera iteración, teniendo en cuenta las limitaciones y el objetivo en Replit?**
+```
