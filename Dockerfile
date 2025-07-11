@@ -1,5 +1,5 @@
-# Etapa 1: Build del frontend desde la raíz
-FROM node:18-alpine as frontend-build
+# Etapa 1: Build del frontend y backend desde la raíz
+FROM node:18-alpine as build-stage
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -23,9 +23,9 @@ COPY package*.json ./
 RUN npm ci --only=production
 COPY server/ ./server/
 COPY shared/ ./shared/
-# Copiar el frontend ya compilado desde la etapa anterior
-COPY --from=frontend-build /app/dist ./client/dist/
 # Copiar el backend compilado
-COPY --from=frontend-build /app/dist ./dist/
+COPY --from=build-stage /app/dist ./dist/
+# Copiar el frontend generado
+COPY --from=build-stage /app/client/dist ./client/dist/
 EXPOSE 5000
 CMD ["npm", "start"] 
