@@ -1,0 +1,16 @@
+[phases.setup]
+nixPkgs = ["nodejs", "python311", "ffmpeg", "libsndfile"]
+
+[phases.install]
+cmds = [
+  "npm ci --only=production",
+  "pip install -r server/services/requirements.txt"
+]
+
+[phases.build]
+cmds = [
+  "npm run build"
+]
+
+[start]
+cmd = "npm start" 

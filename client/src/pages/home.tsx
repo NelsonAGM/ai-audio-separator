@@ -271,7 +271,7 @@ export default function Home() {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">AI Audio Separator</h1>
-                <p className="text-xs text-gray-500">Powered by Spleeter AI</p>
+                <p className="text-xs text-gray-500">Powered by AI (Demucs/Advanced/Fast)</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">

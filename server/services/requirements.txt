@@ -1,5 +1,18 @@
-spleeter==2.3.2
+# Core audio processing
 librosa==0.10.1
 soundfile==0.12.1
-tensorflow==2.13.1
 numpy==1.24.3
+scipy==1.11.4
+
+# AI-based separation (choose one based on resources)
+demucs==4.0.1
+# spleeter==2.3.2  # Alternative if Demucs is too heavy
+
+# Deep learning framework
+torch==2.1.2
+torchaudio==2.1.2
+
+# Additional processing
+pydub==0.25.1
+resampy==0.4.2
+psutil==5.9.6
