@@ -20,8 +20,6 @@ export function log(message: string, source = "express") {
 
 export async function setupVite(app: Express, server: Server) {
   const { createServer: createViteServer, createLogger } = await import("vite");
-  const viteConfigModule = await import("../../vite.config.js");
-  const viteConfig = viteConfigModule.default || viteConfigModule;
   viteLogger = createLogger();
 
   const serverOptions = {
@@ -31,8 +29,7 @@ export async function setupVite(app: Express, server: Server) {
   };
 
   const vite = await createViteServer({
-    ...viteConfig,
-    configFile: false,
+    // No pasamos viteConfig ni configFile, Vite lo resuelve automáticamente
     customLogger: {
       ...viteLogger,
       error: (msg, options) => {
