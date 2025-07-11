@@ -24,6 +24,6 @@ RUN npm ci --only=production
 COPY server/ ./server/
 COPY shared/ ./shared/
 # Copiar el frontend ya compilado desde la etapa anterior
-COPY --from=frontend-build /app/client/dist ./client/dist/
+COPY --from=frontend-build /app/dist ./client/dist/
 EXPOSE 5000
 CMD ["npm", "start"] 
