@@ -69,7 +69,9 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(import.meta.dirname, "public");
+  // Usar una ruta absoluta robusta compatible con Railway
+  const distPath = path.join(process.cwd(), "dist-server", "server", "public");
+  console.log("Intentando servir archivos estáticos desde:", distPath);
 
   if (!fs.existsSync(distPath)) {
     throw new Error(
