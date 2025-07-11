@@ -18,7 +18,7 @@ WORKDIR /app
 
 # Copia solo lo necesario
 COPY --from=build-stage /app/dist-server ./dist-server
-COPY --from=build-stage /app/client/dist ./client/dist
+COPY --from=build-stage /app/dist/public ./client/dist
 COPY --from=build-stage /app/server ./server
 COPY --from=build-stage /app/shared ./shared
 COPY --from=build-stage /app/package*.json ./
