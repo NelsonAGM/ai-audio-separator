@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { insertAudioFileSchema, insertSeparatedTrackSchema } from "@shared/schema";
+import { storage } from "./storage.js";
+import { insertAudioFileSchema, insertSeparatedTrackSchema } from "../shared/schema.js";
 import multer from "multer";
 import path from "path";
 import fs from "fs";

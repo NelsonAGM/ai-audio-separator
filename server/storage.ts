@@ -1,4 +1,4 @@
-import { users, audioFiles, separatedTracks, type User, type InsertUser, type AudioFile, type InsertAudioFile, type SeparatedTrack, type InsertSeparatedTrack } from "@shared/schema";
+import { users, audioFiles, separatedTracks, type User, type InsertUser, type AudioFile, type InsertAudioFile, type SeparatedTrack, type InsertSeparatedTrack } from "../shared/schema.js";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
