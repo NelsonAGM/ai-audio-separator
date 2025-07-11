@@ -1,9 +1,8 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
-// El import de Vite se moverá dentro de setupVite
+// El import de Vite y viteConfig se moverán dentro de setupVite
 import { type Server } from "http";
-import viteConfig from "../vite.config.js";
 import { nanoid } from "nanoid";
 
 let viteLogger: any = null;
@@ -21,6 +20,8 @@ export function log(message: string, source = "express") {
 
 export async function setupVite(app: Express, server: Server) {
   const { createServer: createViteServer, createLogger } = await import("vite");
+  const viteConfigModule = await import("../../vite.config.js");
+  const viteConfig = viteConfigModule.default || viteConfigModule;
   viteLogger = createLogger();
 
   const serverOptions = {
