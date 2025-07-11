@@ -57,10 +57,8 @@ app.use((req, res, next) => {
       viteModule.serveStatic(app);
     }
 
-    // ALWAYS serve the app on port 5000
-    // this serves both the API and the client.
-    // It is the only port that is not firewalled.
-    const port = 5000;
+    // ALWAYS serve the app on the port asignado por Railway o 5000 por defecto
+    const port = process.env.PORT ? Number(process.env.PORT) : 5000;
     server.listen({
       port,
       host: "0.0.0.0"
