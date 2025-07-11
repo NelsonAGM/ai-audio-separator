@@ -25,5 +25,7 @@ COPY server/ ./server/
 COPY shared/ ./shared/
 # Copiar el frontend ya compilado desde la etapa anterior
 COPY --from=frontend-build /app/dist ./client/dist/
+# Copiar el backend compilado
+COPY --from=frontend-build /app/dist ./dist/
 EXPOSE 5000
 CMD ["npm", "start"] 
