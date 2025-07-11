@@ -18,8 +18,8 @@ def create_simple_separation(input_path, output_dir):
     try:
         logger.info(f"Loading audio file: {input_path}")
         
-        # Load audio - optimized for speed and quality balance
-        y, sr = librosa.load(input_path, sr=16000, mono=True, duration=30.0)
+        # Load audio - process full file with optimized sample rate
+        y, sr = librosa.load(input_path, sr=16000, mono=True, duration=None)
         logger.info(f"Loaded: {len(y)/sr:.1f}s at {sr}Hz")
         
         # Fast filtering functions using scipy
