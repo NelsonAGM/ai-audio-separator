@@ -28,7 +28,7 @@ COPY --from=build-stage /app/server/services/requirements.txt ./server/services/
 RUN npm ci --only=production
 
 # Instala dependencias de Python
-RUN pip install --no-cache-dir -r server/services/requirements.txt
+RUN pip install --no-cache-dir --break-system-packages -r server/services/requirements.txt
 
 EXPOSE 5000
 
