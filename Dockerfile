@@ -1,9 +1,9 @@
-# Etapa 1: Build del frontend
+# Etapa 1: Build del frontend desde la raíz
 FROM node:18-alpine as frontend-build
-WORKDIR /app/client
-COPY client/package*.json ./
+WORKDIR /app
+COPY package*.json ./
 RUN npm ci --omit=dev
-COPY client/ .
+COPY . .
 RUN npm run build
 
 # Etapa 2: Backend y producción
