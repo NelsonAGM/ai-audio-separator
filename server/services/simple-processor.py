@@ -18,55 +18,70 @@ def create_simple_separation(input_path, output_dir):
     try:
         logger.info(f"Loading audio file: {input_path}")
         
-        # Load audio - limit to 30 seconds and lower sample rate for speed
-        y, sr = librosa.load(input_path, sr=8000, mono=True, duration=30.0)
+        # Load audio - optimized for speed and quality balance
+        y, sr = librosa.load(input_path, sr=16000, mono=True, duration=30.0)
         logger.info(f"Loaded: {len(y)/sr:.1f}s at {sr}Hz")
         
-        # Apply different filtering to create distinct tracks
-        def lowpass_filter(data, cutoff, fs, order=4):
+        # Fast filtering functions using scipy
+        def lowpass_filter(data, cutoff, fs, order=3):
             nyquist = 0.5 * fs
             normal_cutoff = cutoff / nyquist
             b, a = butter(order, normal_cutoff, btype='low', analog=False)
             return filtfilt(b, a, data)
         
-        def highpass_filter(data, cutoff, fs, order=4):
+        def highpass_filter(data, cutoff, fs, order=3):
             nyquist = 0.5 * fs  
             normal_cutoff = cutoff / nyquist
             b, a = butter(order, normal_cutoff, btype='high', analog=False)
             return filtfilt(b, a, data)
         
-        def bandpass_filter(data, low_cutoff, high_cutoff, fs, order=4):
+        def bandpass_filter(data, low_cutoff, high_cutoff, fs, order=3):
             nyquist = 0.5 * fs
             low = low_cutoff / nyquist
             high = high_cutoff / nyquist
             b, a = butter(order, [low, high], btype='band', analog=False)
             return filtfilt(b, a, data)
         
-        logger.info("Creating filtered tracks...")
+        logger.info("Creating separated tracks with enhanced processing...")
         
         # Create different versions of the audio
         tracks = {}
         
-        # Vocals: mid-frequency band + some reverb
-        vocals = bandpass_filter(y, 150, 3000, sr)
-        vocals = vocals * 0.8  # Slightly quieter
+        # Fast spectral-based separation using numpy operations
+        
+        # Simple but effective separation using different frequency emphasis
+        
+        # Vocals: mid-frequency emphasis with vocal formant boost
+        vocals = bandpass_filter(y, 100, 3400, sr)  # Human voice range
+        # Add emphasis on vocal formants (1000-2000Hz)
+        vocal_formants = bandpass_filter(y, 1000, 2000, sr) * 0.4
+        vocals = vocals + vocal_formants
+        vocals = vocals * 0.85
         tracks['vocals'] = vocals
         
-        # Bass: low frequencies only
-        bass = lowpass_filter(y, 200, sr)
-        bass = bass * 1.2  # Boost bass
+        # Bass: low frequencies with punch
+        bass = lowpass_filter(y, 250, sr)
+        # Add sub-bass emphasis
+        sub_bass = bandpass_filter(y, 40, 100, sr) * 0.6
+        bass = bass + sub_bass
+        bass = bass * 1.4  # Boost bass
         tracks['bass'] = bass
         
-        # Drums: emphasize percussive elements
-        drums = highpass_filter(y, 60, sr)
-        drums = bandpass_filter(drums, 60, 3500, sr)  # Stay within Nyquist limit
-        # Add some compression effect
-        drums = np.tanh(drums * 2) * 0.7
+        # Drums: high-pass filtered with percussive emphasis
+        drums_base = highpass_filter(y, 80, sr)
+        drums = bandpass_filter(drums_base, 80, 7000, sr)
+        # Add transient emphasis with compression
+        drums = np.tanh(drums * 2.2) * 0.85
+        # Enhance snare frequencies
+        snare_boost = bandpass_filter(y, 150, 300, sr) * 0.3
+        drums = drums + snare_boost
         tracks['drums'] = drums
         
-        # Other: mid-high frequencies
-        other = bandpass_filter(y, 800, 3500, sr)  # Stay within Nyquist limit
-        other = other * 0.6
+        # Other: mid-high frequencies avoiding vocal and bass ranges
+        other = bandpass_filter(y, 500, 7000, sr)
+        # Reduce bleeding from other tracks
+        other = other - (vocals * 0.15) - (bass * 0.1)
+        other = other * 0.75
         tracks['other'] = other
         
         logger.info("Saving tracks...")

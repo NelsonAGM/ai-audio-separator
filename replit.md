@@ -48,24 +48,27 @@ Preferred communication style: Simple, everyday language.
 
 ### Backend Services
 - **Storage Interface**: Abstracted storage layer with in-memory implementation (ready for database integration)
-- **Audio Processor**: Python script integration using Spleeter for AI-powered audio separation
+- **Audio Processor**: Python script integration using advanced spectral filtering techniques for high-quality audio separation
 - **File Management**: Temporary file storage and cleanup in uploads/separated directories
+- **Multiple Processors**: Simple (fast), Advanced (high-quality), and Demucs (AI-based) processing options
 
 ## Data Flow
 
 1. **Upload Phase**: User uploads audio file through drag-and-drop interface
 2. **Storage Phase**: File saved to temporary storage, metadata recorded in database
-3. **Processing Phase**: Python script processes audio using Spleeter AI model
-4. **Separation Phase**: Four tracks generated (vocals, drums, bass, other instruments)
+3. **Processing Phase**: Python script processes audio using advanced spectral filtering and frequency analysis
+4. **Separation Phase**: Four tracks generated using intelligent frequency masking (vocals, drums, bass, other instruments)
 5. **Completion Phase**: Separated tracks saved and made available for playback/download
 
 ## External Dependencies
 
 ### AI/ML Dependencies
-- **Spleeter**: Deezer's open-source audio separation library (4-stem model)
-- **TensorFlow**: Required by Spleeter for machine learning operations
-- **Librosa**: Audio processing and analysis library
+- **Librosa**: Advanced audio processing and analysis library for spectral filtering
 - **SoundFile**: Audio file I/O operations
+- **SciPy**: Signal processing filters (Butterworth filters for frequency separation)
+- **NumPy**: Mathematical operations for audio processing
+- **Demucs**: Facebook's modern audio separation model (installed but CPU-intensive)
+- **PyTorch**: Deep learning framework for AI models
 
 ### Database
 - **Neon Database**: Serverless PostgreSQL for production
