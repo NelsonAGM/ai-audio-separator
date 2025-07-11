@@ -1,6 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-// Quitar import estático de setupVite y serveStatic
 import { log } from "./vite";
 
 const app = express();
@@ -48,13 +47,13 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Importar dinámicamente setupVite y serveStatic
+  // Importar dinámicamente setupVite y serveStatic desde vite.js
   if (app.get("env") === "development") {
-    const { setupVite } = await import("./vite");
-    await setupVite(app, server);
+    const viteModule = await import("./vite.js");
+    await viteModule.setupVite(app, server);
   } else {
-    const { serveStatic } = await import("./vite");
-    serveStatic(app);
+    const viteModule = await import("./vite.js");
+    viteModule.serveStatic(app);
   }
 
   // ALWAYS serve the app on port 5000
