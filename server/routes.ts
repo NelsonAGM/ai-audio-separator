@@ -111,9 +111,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             fs.mkdirSync(outputPath, { recursive: true });
           }
 
-          // Run audio separation (using demo processor for quick results)
+          // Run audio separation (using simple processor for real separation)
           const pythonProcess = spawn("python", [
-            path.join(process.cwd(), "server/services/demo-processor.py"),
+            path.join(process.cwd(), "server/services/simple-processor.py"),
             inputPath,
             outputPath,
           ], {

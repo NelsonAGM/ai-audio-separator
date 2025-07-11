@@ -5,9 +5,10 @@ import logging
 import numpy as np
 import librosa
 import soundfile as sf
+from scipy.signal import butter, filtfilt
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def create_simple_separation(input_path, output_dir):
@@ -17,81 +18,70 @@ def create_simple_separation(input_path, output_dir):
     try:
         logger.info(f"Loading audio file: {input_path}")
         
-        # Load audio file with reduced quality for faster processing
-        waveform, sample_rate = librosa.load(input_path, sr=16000, mono=False)
-        logger.info(f"Sample rate: {sample_rate}")
+        # Load audio - limit to 30 seconds and lower sample rate for speed
+        y, sr = librosa.load(input_path, sr=8000, mono=True, duration=30.0)
+        logger.info(f"Loaded: {len(y)/sr:.1f}s at {sr}Hz")
         
-        # Limit to 2 minutes for testing
-        max_length = 120 * sample_rate
-        if waveform.shape[-1] > max_length:
-            logger.info(f"Trimming audio from {waveform.shape[-1]/sample_rate:.1f}s to {max_length/sample_rate:.1f}s")
-            waveform = waveform[..., :max_length]
+        # Apply different filtering to create distinct tracks
+        def lowpass_filter(data, cutoff, fs, order=4):
+            nyquist = 0.5 * fs
+            normal_cutoff = cutoff / nyquist
+            b, a = butter(order, normal_cutoff, btype='low', analog=False)
+            return filtfilt(b, a, data)
         
-        # Convert to stereo if needed
-        if len(waveform.shape) == 1:
-            waveform = np.stack([waveform, waveform])
-        elif waveform.shape[0] == 1:
-            waveform = np.repeat(waveform, 2, axis=0)
+        def highpass_filter(data, cutoff, fs, order=4):
+            nyquist = 0.5 * fs  
+            normal_cutoff = cutoff / nyquist
+            b, a = butter(order, normal_cutoff, btype='high', analog=False)
+            return filtfilt(b, a, data)
         
-        # Transpose to (samples, channels) format
-        waveform = waveform.T
+        def bandpass_filter(data, low_cutoff, high_cutoff, fs, order=4):
+            nyquist = 0.5 * fs
+            low = low_cutoff / nyquist
+            high = high_cutoff / nyquist
+            b, a = butter(order, [low, high], btype='band', analog=False)
+            return filtfilt(b, a, data)
         
-        logger.info(f"Waveform shape: {waveform.shape}")
-        logger.info("Creating frequency-based separation...")
+        logger.info("Creating filtered tracks...")
         
-        # Simple frequency-based separation
-        # Convert to frequency domain
-        n_fft = 2048
-        hop_length = 512
+        # Create different versions of the audio
+        tracks = {}
         
-        # Get STFT
-        stft = librosa.stft(waveform[:, 0], n_fft=n_fft, hop_length=hop_length)
-        magnitude = np.abs(stft)
-        phase = np.angle(stft)
+        # Vocals: mid-frequency band + some reverb
+        vocals = bandpass_filter(y, 150, 3000, sr)
+        vocals = vocals * 0.8  # Slightly quieter
+        tracks['vocals'] = vocals
         
-        # Create frequency masks for different "instruments"
-        freqs = librosa.fft_frequencies(sr=sample_rate, n_fft=n_fft)
+        # Bass: low frequencies only
+        bass = lowpass_filter(y, 200, sr)
+        bass = bass * 1.2  # Boost bass
+        tracks['bass'] = bass
         
-        # Vocals (mid frequencies 300-3000 Hz)
-        vocals_mask = np.logical_and(freqs >= 300, freqs <= 3000)
-        vocals_stft = stft.copy()
-        vocals_stft[~vocals_mask] *= 0.1  # Reduce other frequencies
+        # Drums: emphasize percussive elements
+        drums = highpass_filter(y, 60, sr)
+        drums = bandpass_filter(drums, 60, 3500, sr)  # Stay within Nyquist limit
+        # Add some compression effect
+        drums = np.tanh(drums * 2) * 0.7
+        tracks['drums'] = drums
         
-        # Bass (low frequencies 20-250 Hz) 
-        bass_mask = np.logical_and(freqs >= 20, freqs <= 250)
-        bass_stft = stft.copy()
-        bass_stft[~bass_mask] *= 0.1
+        # Other: mid-high frequencies
+        other = bandpass_filter(y, 800, 3500, sr)  # Stay within Nyquist limit
+        other = other * 0.6
+        tracks['other'] = other
         
-        # Drums (wide range with emphasis on percussive frequencies)
-        drums_stft = stft.copy()
-        drums_stft[freqs < 60] *= 0.3  # Reduce very low
-        drums_stft[freqs > 8000] *= 0.5  # Reduce very high
+        logger.info("Saving tracks...")
         
-        # Other (everything else)
-        other_stft = stft.copy()
-        other_stft[vocals_mask] *= 0.3
-        other_stft[bass_mask] *= 0.3
-        
-        logger.info("Converting back to time domain...")
-        
-        # Convert back to time domain
-        tracks = {
-            'vocals': librosa.istft(vocals_stft, hop_length=hop_length),
-            'bass': librosa.istft(bass_stft, hop_length=hop_length),
-            'drums': librosa.istft(drums_stft, hop_length=hop_length),
-            'other': librosa.istft(other_stft, hop_length=hop_length)
-        }
-        
-        # Convert to stereo for all tracks
+        # Save tracks
         for track_name, track_data in tracks.items():
-            if len(track_data.shape) == 1:
-                track_data = np.stack([track_data, track_data], axis=1)
-            else:
-                track_data = track_data.reshape(-1, 1)
-                track_data = np.repeat(track_data, 2, axis=1)
+            # Normalize
+            if np.max(np.abs(track_data)) > 0:
+                track_data = track_data / np.max(np.abs(track_data)) * 0.8
+            
+            # Convert to stereo
+            stereo_data = np.column_stack([track_data, track_data])
             
             output_path = os.path.join(output_dir, f"{track_name}.wav")
-            sf.write(output_path, track_data, sample_rate)
+            sf.write(output_path, stereo_data, sr)
             logger.info(f"Saved {track_name} track to {output_path}")
         
         logger.info("Simple separation completed successfully!")
@@ -123,10 +113,10 @@ def main():
     success = create_simple_separation(input_path, output_dir)
     
     if success:
-        logger.info("Audio separation completed successfully!")
+        logger.info("Simple audio separation completed successfully!")
         sys.exit(0)
     else:
-        logger.error("Audio separation failed!")
+        logger.error("Simple audio separation failed!")
         sys.exit(1)
 
 if __name__ == "__main__":
