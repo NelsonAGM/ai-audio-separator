@@ -2,7 +2,7 @@
 FROM node:18-alpine as frontend-build
 WORKDIR /app/client
 COPY client/package*.json ./
-RUN npm install
+RUN npm ci --omit=dev
 COPY client/ .
 RUN npm run build
 
